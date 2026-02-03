@@ -62,3 +62,7 @@ uninstall:
 
 # clean as a synonym for uninstall
 clean: uninstall
+
+# tests for ci/cd pipeline
+check:
+	update-proton -h
