@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Configuration
+# Configuration, defaults
 REPO_OWNER="czandee"
 REPO_NAME="proton-updater"
-TARGET_VERSION=${1:-"latest"}
+TARGET_VERSION="latest"
 ACTION="install"
 
 function usage {
