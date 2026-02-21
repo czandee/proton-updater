@@ -8,6 +8,9 @@ APPNAME="$(basename "$0")"
 # defaults for the CLI options
 DOWNLOAD_DIR="$HOME/Downloads"
 VERBOSE="${VERBOSE-"false"}"
+VERIFY_SSL="${VERIFY_SSL-"true"}"
+DRY_RUN="${DRY_RUN-"false"}"
+VERSION="1.2.0"
 
 # configuration for the meta urls in json format
 declare -A JSON_URLS=(
@@ -36,7 +39,10 @@ package:
 OPTIONS:
   -d, --directory   Local directory to use as download location.
                     Default: ${DOWNLOAD_DIR}
+  -n, --no-verify   Disable SSL certificate verification (not recommended)
+  -y, --dry-run     Check for updates without downloading or installing
   -v, --verbose     Log debug messages.
+  --version         Show version information
   -h, --help        Show this usage information.
 
 EOF
@@ -64,8 +70,8 @@ function check_dependencies {
 # command line parsing
 # $*: command line to parse
 function parse_args {
-  local short="d:vh"
-  local long="directory:,verbose,help"
+  local short="d:nvy:h"
+  local long="directory:,no-verify,dry-run,verbose,version,help"
 
   local rc
   getopt -T >/dev/null 2>&1 && rc=$? || rc=$?
@@ -88,7 +94,10 @@ function parse_args {
   while true; do
     case "$1" in
       -h|--help) usage; exit 0;;
+      --version) echo "${APPNAME} version ${VERSION}"; exit 0;;
       -d|--directory) DOWNLOAD_DIR="${2}"; shift 2;;
+      -n|--no-verify) VERIFY_SSL="false"; shift;;
+      -y|--dry-run) DRY_RUN="true"; shift;;
       -v|--verbose) VERBOSE="true"; shift;;
       --) shift; break;; # end of options, the rest will be passed through
       *) usage; exit 0;;
@@ -140,11 +149,16 @@ function update_proton {
     fi
   fi
 
+  local curl_ssl_arg=""
+  if [[ "$VERIFY_SSL" != "true" ]]; then
+    curl_ssl_arg="-k"
+  fi
+
   log_info "Fetching latest version info..."
 
   # fetch JSON content
   local json_content
-  json_content=$(curl -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
+  json_content=$(curl $curl_ssl_arg -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
 
   if [ -z "$json_content" ]; then
     log_error "Server returned no data."
@@ -192,6 +206,12 @@ function update_proton {
     log_debug "Checksum: $checksum"
   fi
 
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "[dry-run] Would download: $deb_url"
+    log_info "[dry-run] Would install: $file_name"
+    exit 0
+  fi
+
   # prepare download
   if [[ ! -d "${download_dir}" ]]; then
     log_info "Creating $download_dir"
@@ -215,11 +235,16 @@ function update_proton {
     fi
   fi
 
+  local wget_ssl_arg=""
+  if [[ "$VERIFY_SSL" != "true" ]]; then
+    wget_ssl_arg="--no-check-certificate"
+  fi
+
   # download (with retries)
   if [ "$file_already_valid" == "false" ]; then
     log_info "Downloading $file_name..."
     # -t: retries, -T: timeout
-    if ! wget -t "$retry_count" -T 15 -U "Mozilla/5.0" -q --show-progress -O "$file_name" "$deb_url"; then
+    if ! wget -t "$retry_count" -T 15 -U "Mozilla/5.0" $wget_ssl_arg -q --show-progress -O "$file_name" "$deb_url"; then
       log_error "Download failed after $retry_count attempts."
       exit 1
     fi
