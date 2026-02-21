@@ -1,10 +1,13 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Configuration, defaults
 REPO_OWNER="czandee"
 REPO_NAME="proton-updater"
 TARGET_VERSION="latest"
 ACTION="install"
+TMP_DIR=""
 
 function usage {
   cat <<EOF
@@ -26,7 +29,7 @@ EOF
 }
 
 function cleanup {
-  [[ -d "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
+  [[ -n "$TMP_DIR" && -d "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT INT TERM
 
@@ -47,7 +50,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check dependencies
-for cmd in curl tar make; do
+for cmd in curl tar make jq; do
   if ! command -v "$cmd" &> /dev/null; then
     echo "Error: $cmd is required. Please install it using your package manager."
     exit 1
@@ -66,13 +69,13 @@ fi
 RELEASE_DATA=$(curl -s "$API_URL")
 
 # Check if the release actually exists
-if echo "$RELEASE_DATA" | grep -q "Not Found"; then
+if echo "$RELEASE_DATA" | jq -e '.message' 2>/dev/null | grep -q "Not Found"; then
   echo "Error: Version '$TARGET_VERSION' not found in the GitHub releases."
   exit 1
 fi
 
-TARBALL_URL=$(echo "$RELEASE_DATA" | grep "tarball_url" | cut -d '"' -f 4)
-VERSION_TAG=$(echo "$RELEASE_DATA" | grep "tag_name" | cut -d '"' -f 4)
+TARBALL_URL=$(echo "$RELEASE_DATA" | jq -r '.tarball_url')
+VERSION_TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
 
 echo "Preparing to $ACTION $VERSION_TAG..."
 
