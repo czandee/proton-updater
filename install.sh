@@ -48,7 +48,7 @@ done
 
 # Check dependencies
 for cmd in curl tar make; do
-  if ! command -v $cmd &> /dev/null; then
+  if ! command -v "$cmd" &> /dev/null; then
     echo "Error: $cmd is required. Please install it using your package manager."
     exit 1
   fi
