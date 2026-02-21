@@ -70,8 +70,8 @@ function check_dependencies {
 # command line parsing
 # $*: command line to parse
 function parse_args {
-  local short="d:nvy:h"
-  local long="directory:,no-verify,dry-run,verbose,version,help"
+  local short="d:nvyh"
+  local long="directory:,no-verify,verbose,dry-run,version,help"
 
   local rc
   getopt -T >/dev/null 2>&1 && rc=$? || rc=$?
@@ -83,7 +83,7 @@ function parse_args {
     }
   else
     log_error "No GNU getopt, reduced support for short options only"
-    args=$(getopt $short "$@") || {
+    args=$(getopt "$short" "$@") || {
       usage
       exit 1
     }
