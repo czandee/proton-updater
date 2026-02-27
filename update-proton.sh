@@ -127,27 +127,16 @@ function parse_args {
 # $1: package-name
 # $2: url for the version information (json file)
 # $3: download directory for the debian package
-# $4: optional: validate sudo (true/false, default: false)
-# $5  optional: retry count on wget download problems (default: 3)
-# $6: optional: cleanup after install (true/false, default: true)
+# $4  optional: retry count on wget download problems (default: 3)
+# $5: optional: cleanup after install (true/false, default: true)
 function update_proton {
   local package_name=$1
   local json_url=$2
   local download_dir=$3
-  local validate_sudo="${4-"false"}"
-  local retry_count="${5-3}"
-  local cleanup_after_install="${6-"true"}"
+  local retry_count="${4-3}"
+  local cleanup_after_install="${5-"true"}"
 
   log_info "Updater for $package_name started"
-
-  # sudo refresh (optional, not required if you have sudo privs with NOPASSWD)
-  if [[ "$validate_sudo" == "true" ]]; then
-    log_debug "Refreshing sudo credentials..."
-    if ! sudo -v; then
-      log_error "Sudo privileges required to install packages."
-      exit 1
-    fi
-  fi
 
   local curl_ssl_arg=""
   if [[ "$VERIFY_SSL" != "true" ]]; then
