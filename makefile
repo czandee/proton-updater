@@ -5,64 +5,61 @@
 
 # configuration
 SRC_DIR  := $(CURDIR)
-BIN_DIR  := $(HOME)/.local/bin
+PREFIX   ?= $(HOME)/.local
+BIN_DIR  := $(PREFIX)/bin
 # mode can be symlink or copy
 MODE ?= copy
 
+# validate MODE to prevent shell injection and ensure correct usage
+ifeq ($(filter $(MODE),symlink copy),)
+$(error Invalid MODE '$(MODE)'. Must be 'symlink' or 'copy')
+endif
+
 # sources: list of scripts to process in this folder
-SOURCES  := $(wildcard *.sh)
+SOURCES  := $(filter-out install.sh, $(wildcard *.sh))
 
 # binaries: strip path and extension
 TARGETS  := $(patsubst %.sh, $(BIN_DIR)/%, $(notdir $(SOURCES)))
 
-.PHONY: all install uninstall check-path
+.PHONY: all install uninstall check-path clean check
 
 all: install check-path
 
 install: $(BIN_DIR) $(TARGETS)
 	@echo "Installation complete: Binaries in $(BIN_DIR)"
 
-# ensure target directories exist
+# ensure target directory exists
 $(BIN_DIR):
-	mkdir -p $@
+	mkdir -p "$@" || { echo "Error: Failed to create $(BIN_DIR)"; exit 1; }
 
 # rule for binaries (executable, no extension)
 # note: $< source, $@ target
-$(BIN_DIR)/%: $(SRC_DIR)/%.sh
-	@if [ "$(MODE)" = "symlink" ]; then \
-		ln -sf $< $@; \
+$(BIN_DIR)/%: $(SRC_DIR)/%.sh | $(BIN_DIR)
+	@set -e; \
+	if [ "$(MODE)" = "symlink" ]; then \
+		ln -snf "$(abspath $<)" "$@"; \
 		echo "Linked: $(notdir $<) -> $@"; \
-	elif [ "$(MODE)" = "copy" ]; then \
-		cp $< $@; \
-		echo "Copied: $(notdir $<) -> $@"; \
 	else \
-		echo "Error: Unknown MODE='$(MODE)'."; exit 1; \
+		install -m 755 "$<" "$@"; \
+		echo "Installed: $(notdir $<) -> $@"; \
 	fi
-	@chmod +x $@
 
 # rule to check if the BIN_DIR is in the system path
 check-path:
 	@case ":$(PATH):" in \
 		*":$(BIN_DIR):"*) ;; \
-		*) echo "WARNING: $(BIN_DIR) is not in your PATH. Add 'export PATH=\"\$$HOME/.local/bin:\$$PATH\"' to your .bashrc";; \
+		*) echo "WARNING: $(BIN_DIR) is not in your PATH. Add 'export PATH="$(BIN_DIR):$$PATH"' to your .bashrc";; \
 	esac
 
-# rule to uninstall, in case of symlinks the executable flag on the source
-# file is removed again
+# rule to uninstall
 uninstall:
-	@for target in $(TARGETS); do \
-		if [ -L "$$target" ]; then \
-			SRC_FILE=$$(readlink -f "$$target"); \
-			chmod -x "$$SRC_FILE" 2>/dev/null || true; \
-			echo "chmod -x on: $$SRC_FILE"; \
-		fi; \
-		rm -f "$$target"; \
-	done
+	@rm -f $(TARGETS)
 	@echo "Uninstallation from $(BIN_DIR) complete."
 
-# clean as a synonym for uninstall
-clean: uninstall
+# rule for cleanup
+clean:
+	@echo "Cleanup complete."
 
 # tests for ci/cd pipeline
 check:
-	update-proton -h
+	./update-proton.sh -h
