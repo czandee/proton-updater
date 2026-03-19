@@ -35,8 +35,8 @@ function cleanup {
 trap cleanup EXIT INT TERM
 
 # Check OS
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-  echo "Error: This script is intended for Linux/macOS."
+if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+  echo "Error: This script is intended for Debian-based Linux systems only."
   exit 1
 fi
 
@@ -45,6 +45,7 @@ while [[ "$#" -gt 0 ]]; do
   case $1 in
     -h|--help) usage; exit 0;;
     -u|--uninstall) ACTION="uninstall" ;;
+    -*) echo "Error: Unknown option '$1'."; usage; exit 1;;
     *) TARGET_VERSION="$1";;
   esac
   shift
