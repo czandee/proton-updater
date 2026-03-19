@@ -22,7 +22,7 @@ Version:
 
 Examples:
   $0                   # install latest version
-  $0 v1.0.0            # install version v1.0.0
+  $0 v1.2.1            # install version v1.2.1
   $0 --uninstall       # uninstall the current version
 
 EOF
@@ -49,6 +49,14 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+# Uninstall doesn't need a release — remove known binaries directly
+if [ "$ACTION" == "uninstall" ]; then
+  echo "Uninstalling..."
+  rm -f "${HOME}/.local/bin/update-proton"
+  echo "Uninstall complete!"
+  exit 0
+fi
+
 # Check dependencies
 for cmd in curl tar make jq; do
   if ! command -v "$cmd" &> /dev/null; then
@@ -66,16 +74,19 @@ else
   API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/tags/$TARGET_VERSION"
 fi
 
-RELEASE_DATA=$(curl -s "$API_URL")
-
-# Check if the release actually exists
-if echo "$RELEASE_DATA" | jq -e '.message' 2>/dev/null | grep -q "Not Found"; then
-  echo "Error: Version '$TARGET_VERSION' not found in the GitHub releases."
+# Get release data, raise error on any http code error returned to curl
+RELEASE_DATA=$(curl -sf "$API_URL") || {
+  echo "Error: Could not fetch release '$TARGET_VERSION'. Check GitHub version tags or your network."
   exit 1
-fi
+}
 
 TARBALL_URL=$(echo "$RELEASE_DATA" | jq -r '.tarball_url')
 VERSION_TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+
+# Validate the tarball_url and version_tag fields
+error_msg="Error: Could not determine"
+[[ "$TARBALL_URL" == "null" || -z "$TARBALL_URL" ]] && { echo "$error_msg tarball URL."; exit 1; }
+[[ "$VERSION_TAG" == "null" || -z "$VERSION_TAG" ]] && { echo "$error_msg version tag."; exit 1; }
 
 echo "Preparing to $ACTION $VERSION_TAG..."
 
@@ -87,13 +98,8 @@ curl -sL "$TARBALL_URL" | tar xz -C "$TMP_DIR" --strip-components=1
 # Execute the makefile (target install)
 (
   cd "$TMP_DIR" || exit 1
-  if [ "$ACTION" == "uninstall" ]; then
-    echo "Uninstalling..."
-    make uninstall
-  else
-    echo "Installing..."
-    make install
-  fi
+  echo "Installing..."
+  make install
 ) || exit 1
 
 echo "${ACTION^} of $VERSION_TAG complete!"
