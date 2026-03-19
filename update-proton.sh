@@ -5,19 +5,19 @@
 
 APPNAME="$(basename "$0")"
 
-# defaults for the CLI options
+# defaults for the CLI options (can be overridden by environment)
 DOWNLOAD_DIR="$HOME/Downloads"
 VERBOSE="${VERBOSE-"false"}"
 VERIFY_SSL="${VERIFY_SSL-"true"}"
 DRY_RUN="${DRY_RUN-"false"}"
-VERSION="1.2.0"
+readonly VERSION="1.2.1"
 
 # configuration for the meta urls in json format
-declare -A JSON_URLS=(
+declare -rA JSON_URLS=(
   ["pass"]="https://proton.me/download/PassDesktop/linux/x64/version.json"
   ["mail"]="https://proton.me/download/mail/linux/version.json"
 )
-declare -A PACKAGES=(
+declare -rA PACKAGES=(
   ["pass"]="proton-pass"
   ["mail"]="proton-mail"
 )
@@ -270,6 +270,10 @@ function update_proton {
 }
 
 # main
-check_dependencies "curl" "jq" "wget" "sha512sum" "dpkg" "sudo"
-parse_args "$@" # returns PACKAGE_NAME, JSON_URL and DOWNLOAD_DIR
-update_proton "$PACKAGE_NAME" "$JSON_URL" "$DOWNLOAD_DIR"
+main() {
+  check_dependencies "curl" "jq" "wget" "sha512sum" "dpkg" "sudo"
+  parse_args "$@"
+  update_proton "$PACKAGE_NAME" "$JSON_URL" "$DOWNLOAD_DIR"
+}
+
+main "$@"

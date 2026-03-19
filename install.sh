@@ -3,6 +3,7 @@
 set -euo pipefail
 
 # Configuration, defaults
+SCRIPT_NAME="$(basename "$0")"
 REPO_OWNER="czandee"
 REPO_NAME="proton-updater"
 TARGET_VERSION="latest"
@@ -11,7 +12,7 @@ TMP_DIR=""
 
 function usage {
   cat <<EOF
-Usage: $(basename "$0") [OPTIONS] [VERSION]
+Usage: $SCRIPT_NAME [OPTIONS] [VERSION]
 
 Options:
   -u, --uninstall   Uninstall the app
@@ -21,9 +22,9 @@ Version:
   The release/version tag to install (default: latest)
 
 Examples:
-  $0                   # install latest version
-  $0 v1.2.1            # install version v1.2.1
-  $0 --uninstall       # uninstall the current version
+  $SCRIPT_NAME                   # install latest version
+  $SCRIPT_NAME v1.2.1            # install version v1.2.1
+  $SCRIPT_NAME --uninstall       # uninstall the current version
 
 EOF
 }
