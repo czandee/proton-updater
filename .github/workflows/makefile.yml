@@ -14,11 +14,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Lint
+      run: shellcheck update-proton.sh install.sh
+
     - name: Install
       run: make install
 
     - name: Call command for usage information
       run: update-proton -h
+
+    - name: Dry run
+      run: DRY_RUN=true update-proton pass
 
     - name: Uninstall
       run: make uninstall

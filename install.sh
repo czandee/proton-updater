@@ -34,9 +34,13 @@ function cleanup {
 }
 trap cleanup EXIT INT TERM
 
-# Check OS
+# Check OS and distro family
 if [[ "$OSTYPE" != "linux-gnu"* ]]; then
   echo "Error: This script is intended for Debian-based Linux systems only."
+  exit 1
+fi
+if ! command -v dpkg &>/dev/null; then
+  echo "Error: dpkg not found. This script requires a Debian-based Linux system."
   exit 1
 fi
 
@@ -82,8 +86,7 @@ RELEASE_DATA=$(curl -sf "$API_URL") || {
   exit 1
 }
 
-TARBALL_URL=$(echo "$RELEASE_DATA" | jq -r '.tarball_url')
-VERSION_TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+read -r TARBALL_URL VERSION_TAG < <(echo "$RELEASE_DATA" | jq -r '[.tarball_url, .tag_name] | @tsv')
 
 # Validate the tarball_url and version_tag fields
 error_msg="Error: Could not determine"

@@ -13,7 +13,9 @@ DOWNLOAD_DIR="$HOME/Downloads"
 VERBOSE="${VERBOSE-"false"}"
 VERIFY_SSL="${VERIFY_SSL-"true"}"
 DRY_RUN="${DRY_RUN-"false"}"
-readonly VERSION="1.2.1"
+RETRY_COUNT="${RETRY_COUNT-3}"
+CLEANUP="${CLEANUP-"true"}"
+readonly VERSION="1.3.0"
 
 # configuration for the meta urls in json format
 declare -rA JSON_URLS=(
@@ -100,7 +102,7 @@ function parse_args {
       -y|--dry-run) DRY_RUN="true"; shift;;
       -v|--verbose) VERBOSE="true"; shift;;
       --) shift; break;; # end of options, the rest will be passed through
-      *) usage; exit 0;;
+      *) usage; exit 1;;
     esac
   done
 
@@ -127,14 +129,10 @@ function parse_args {
 # $1: package-name
 # $2: url for the version information (json file)
 # $3: download directory for the debian package
-# $4  optional: retry count on wget download problems (default: 3)
-# $5: optional: cleanup after install (true/false, default: true)
 function update_proton {
   local package_name=$1
   local json_url=$2
   local download_dir=$3
-  local retry_count="${4-3}"
-  local cleanup_after_install="${5-"true"}"
 
   log_info "Updater for $package_name started"
 
@@ -145,7 +143,7 @@ function update_proton {
 
   # fetch JSON content
   local json_content
-  json_content=$(curl "${curl_ssl_opts[@]}" -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
+  json_content=$(curl "${curl_ssl_opts[@]}" -s -m 30 -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
 
   if [ -z "$json_content" ]; then
     log_error "Server returned no data."
@@ -169,7 +167,7 @@ function update_proton {
   file_name="$(basename "$deb_url")"
 
   log_debug "Most recent online version: $latest_version"
-  log_debug "Filename: $deb_url"
+  log_debug "Download URL: $deb_url"
 
   if [ -z "$checksum" ] || [ "$checksum" == "null" ]; then
     log_error "Could not extract data from JSON."
@@ -229,8 +227,8 @@ function update_proton {
   if [ "$file_already_valid" == "false" ]; then
     log_info "Downloading $file_name..."
     # -t: retries, -T: timeout
-    if ! wget -t "$retry_count" -T 15 -U "Mozilla/5.0" "${wget_ssl_opts[@]}" -q --show-progress -O "$file_name" "$deb_url"; then
-      log_error "Download failed after $retry_count attempts."
+    if ! wget -t "$RETRY_COUNT" -T 15 -U "Mozilla/5.0" "${wget_ssl_opts[@]}" -q --show-progress -O "$file_name" "$deb_url"; then
+      log_error "Download failed after $RETRY_COUNT attempts."
       exit 1
     fi
 
@@ -258,7 +256,7 @@ function update_proton {
   fi
 
   # optional cleanup
-  [[ "${cleanup_after_install}" == "true" ]] && {
+  [[ "${CLEANUP}" == "true" ]] && {
     log_debug "Cleaning up: Removing $file_name"
     rm -f "$file_name"
   }
@@ -267,7 +265,7 @@ function update_proton {
 
 # main
 main() {
-  check_dependencies "curl" "jq" "wget" "sha512sum" "dpkg" "sudo"
+  check_dependencies "curl" "jq" "wget" "sha512sum" "dpkg" "dpkg-query" "sudo"
   parse_args "$@"
   update_proton "$PACKAGE_NAME" "$JSON_URL" "$DOWNLOAD_DIR"
 }
