@@ -51,7 +51,7 @@ EOF
 }
 
 # simple logging functions, use VERBOSE=true or CLI option -v for debugging out
-function log_debug   { [[ "$VERBOSE" == "true" ]] && printf "%s %-7s %s\n" "$APPNAME" "[debug]" "$1" >&2 || true; }
+function log_debug   { if [[ "$VERBOSE" == "true" ]]; then printf "%s %-7s %s\n" "$APPNAME" "[debug]" "$1" >&2; fi; }
 function log_info    { printf "%s %-7s %s\n" "$APPNAME" "[info]" "$1"; }
 function log_warning { printf "%s %-7s %s\n" "$APPNAME" "[warn]" "$1" >&2; }
 function log_error   { printf "%s %-7s %s\n" "$APPNAME" "[error]" "$1" >&2; }
