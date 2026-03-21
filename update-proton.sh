@@ -138,16 +138,14 @@ function update_proton {
 
   log_info "Updater for $package_name started"
 
-  local curl_ssl_arg=""
-  if [[ "$VERIFY_SSL" != "true" ]]; then
-    curl_ssl_arg="-k"
-  fi
+  local curl_ssl_opts=()
+  [[ "$VERIFY_SSL" != "true" ]] && curl_ssl_opts+=("-k")
 
   log_info "Fetching latest version info..."
 
   # fetch JSON content
   local json_content
-  json_content=$(curl $curl_ssl_arg -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
+  json_content=$(curl "${curl_ssl_opts[@]}" -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64)" "$json_url")
 
   if [ -z "$json_content" ]; then
     log_error "Server returned no data."
@@ -224,16 +222,14 @@ function update_proton {
     fi
   fi
 
-  local wget_ssl_arg=""
-  if [[ "$VERIFY_SSL" != "true" ]]; then
-    wget_ssl_arg="--no-check-certificate"
-  fi
+  local wget_ssl_opts=()
+  [[ "$VERIFY_SSL" != "true" ]] && wget_ssl_opts+=("--no-check-certificate")
 
   # download (with retries)
   if [ "$file_already_valid" == "false" ]; then
     log_info "Downloading $file_name..."
     # -t: retries, -T: timeout
-    if ! wget -t "$retry_count" -T 15 -U "Mozilla/5.0" $wget_ssl_arg -q --show-progress -O "$file_name" "$deb_url"; then
+    if ! wget -t "$retry_count" -T 15 -U "Mozilla/5.0" "${wget_ssl_opts[@]}" -q --show-progress -O "$file_name" "$deb_url"; then
       log_error "Download failed after $retry_count attempts."
       exit 1
     fi
