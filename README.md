@@ -24,7 +24,7 @@ curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.
 curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash -s -- v1.0.2
 
 # uninstall current version
-url -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash -s -- --uninstall
+curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash -s -- --uninstall
 ```
 
 ## Install/Uninstall using the makefile
