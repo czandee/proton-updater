@@ -3,6 +3,9 @@
 # ProtonPass and ProtonMail.
 # See usage() or update-proton --help
 
+# safety and strict mode
+set -euo pipefail
+
 APPNAME="$(basename "$0")"
 
 # defaults for the CLI options (can be overridden by environment)
@@ -21,9 +24,6 @@ declare -rA PACKAGES=(
   ["pass"]="proton-pass"
   ["mail"]="proton-mail"
 )
-
-# safety and strict mode
-set -euo pipefail
 
 # show usage information
 function usage() {
@@ -49,10 +49,10 @@ EOF
 }
 
 # simple logging functions, use VERBOSE=true or CLI option -v for debugging out
-function log_debug { if [[ "$VERBOSE" == "true" ]]; then printf "%s %-7s $1\n" "$APPNAME" "[debug]" "${@:2}"; fi; }
-function log_info { printf "%s %-7s $1\n" "$APPNAME" "[info]" "${@:2}"; }
-function log_warning { printf "%s %-7s $1\n" "$APPNAME" "[warn]" "${@:2}"; }
-function log_error { printf "%s %-7s $1\n" "$APPNAME" "[error]" "${@:2}"; }
+function log_debug   { [[ "$VERBOSE" == "true" ]] && printf "%s %-7s %s\n" "$APPNAME" "[debug]" "$1" >&2 || true; }
+function log_info    { printf "%s %-7s %s\n" "$APPNAME" "[info]" "$1"; }
+function log_warning { printf "%s %-7s %s\n" "$APPNAME" "[warn]" "$1" >&2; }
+function log_error   { printf "%s %-7s %s\n" "$APPNAME" "[error]" "$1" >&2; }
 
 # Check Dependencies
 # $*: commands to check for existance
