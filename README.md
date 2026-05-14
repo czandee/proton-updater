@@ -1,35 +1,40 @@
 # Proton Updater
 
-Script to update the Proton desktop apps on a debian based system (e.g. Linux Mint)
+Script to update the Proton desktop apps on a Debian-based system (e.g. Linux Mint).
+
+Supported packages:
 
 * Proton Mail
 * Proton Pass
+* Proton Pass CLI (standalone binary)
 
 ## Usage
 
-On a shell terminal, call the script with the appropriate action subcommand.
+Call the script with the appropriate subcommand:
 
-* `update-proton pass` for the Proton Pass App
-* `update-proton mail` for the Proton Mail App
+* `update-proton pass` to update the Proton Pass desktop app
+* `update-proton mail` to update the Proton Mail desktop app
+* `update-proton cli` to update the Proton Pass CLI binary
 
-Use `update-proton --help` or `update-proton -h` to show the usage page.
+Use `update-proton -h` for the full list of options.
 
-## Install/Uninstall using the installer script
+## Install / Uninstall using the installer script
 
 ```bash
 # install latest version
 curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash
 
-# install specific version, e.g. if you need an older version
+# install a specific version
 curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash -s -- v1.0.2
 
-# uninstall current version
+# uninstall
 curl -sSL https://raw.githubusercontent.com/czandee/proton-updater/main/install.sh | bash -s -- --uninstall
 ```
 
-## Install/Uninstall using the makefile
+## Install / Uninstall using the makefile
 
-Either clone the repository or download and unzip the release zip file and run `make install` or `make uninstall`.
+Clone the repository or download and unzip a release archive, then run `make install` or
+`make uninstall`:
 
 ```bash
 # replace x.y.z with the correct version
@@ -38,4 +43,5 @@ cd proton-updater-x.y.z
 make install  # or 'make uninstall' to remove
 ```
 
-This will install executable copies without the .sh extension in your `~/.local/bin` directory. To remove the copies in ~/.local/bin, run `make uninstall` in the proton-updater-x.y.z directory.
+Installs executable copies (without the `.sh` extension) to `~/.local/bin`. Run `make uninstall`
+in the same directory to remove them.

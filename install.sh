@@ -81,7 +81,7 @@ else
 fi
 
 # Get release data, raise error on any http code error returned to curl
-RELEASE_DATA=$(curl -sf "$API_URL") || {
+RELEASE_DATA=$(curl -sf -m 30 "$API_URL") || {
   echo "Error: Could not fetch release '$TARGET_VERSION'. Check GitHub version tags or your network."
   exit 1
 }
@@ -98,7 +98,7 @@ echo "Preparing to $ACTION $VERSION_TAG..."
 # Download and unpack tarball into a temporary directory
 TMP_DIR=$(mktemp -d)
 echo "Downloading ..."
-curl -sL "$TARBALL_URL" | tar xz -C "$TMP_DIR" --strip-components=1
+curl -sfL -m 120 "$TARBALL_URL" | tar xz -C "$TMP_DIR" --strip-components=1
 
 # Execute the makefile (target install)
 (
