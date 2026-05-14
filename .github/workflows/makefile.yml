@@ -24,7 +24,10 @@ jobs:
       run: update-proton -h
 
     - name: Dry run
-      run: DRY_RUN=true update-proton pass
+      run: |
+        DRY_RUN=true update-proton pass
+        DRY_RUN=true update-proton mail
+        DRY_RUN=true update-proton cli
 
     - name: Uninstall
       run: make uninstall
